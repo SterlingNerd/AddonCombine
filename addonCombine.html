@@ -1,0 +1,100 @@
+<html>
+
+<head>
+    <script type="text/javascript">
+        class ItemPriority {
+            constructor(entry, priority) {
+                this.entry = null;
+                this.priority = 0;
+
+                this.entry = this.entry;
+                this.priority = this.priority;
+            }
+            getEntry() {
+                return this.entry;
+            }
+            getPriority() {
+                return this.priority;
+            }
+        }
+
+
+        function combine() {
+            let dataMap = new HashMap();
+            this.readAndParse(document.getElementById("area1").value, dataMap);
+            this.readAndParse(document.getElementById("area2").value, dataMap);
+            document.getElementById("area3").value = this.writeOutput(dataMap);
+        };
+
+        function readAndParse(text, dataMap) {
+            let itemId = null;
+            let newPriorities = null;
+            for (let i = 0; i < text.length; i++) {
+                let line = text[i];
+                if (line.endsWith('^DFTFC Priority:')) {
+                    itemId = undefined[0].replace('\'', '');
+                    newPriorities = new ArrayList();
+                } else {
+                    if (line.contains('|') && line.contains('|r:')) {
+                        if (itemId === null) {
+                            throw new Exception('Found item priority before finding start of item.');
+                        }
+                        let split = line.split('r: ');
+                        let entry = split[0].replace('|', '').trim();
+                        let priority = Float.parseFloat(split[1].replace(';\'', '').trim());
+                        newPriorities.add(new ItemPriority(entry, priority));
+                    }
+                }
+                if (line.endsWith(';\'')) {
+                    if (itemId === null) {
+                        throw new Exception('Found end of item before finding start of item.');
+                    }
+                    if (newPriorities === null) {
+                        throw new Exception('Found end of item before finding any priority entries.');
+                    }
+                    let existingPriorities = dataMap.get(itemId);
+                    if (existingPriorities !== null) {
+                        existingPriorities.addAll(newPriorities);
+                    } else {
+                        dataMap.put(itemId, newPriorities);
+                    }
+                    itemId = null;
+                    newPriorities = null;
+                }
+            }
+        };
+
+        function writeOutput(dataMap) {
+            let writer = new StringWriter();
+            for (const entry of dataMap.entrySet()) {
+                let itemId = entry.getKey();
+                let values = entry.getValue();
+                values.sort(new Comparator());
+                writer.append('\'').append(itemId).append('^DFTFC Priority:');
+                for (const value of values) {
+                    writer.append('\n');
+                    writer.append('|');
+                    writer.append(value.entry);
+                    writer.append('|r: ');
+                    writer.append(String.valueOf(value.priority));
+                }
+                writer.append(';\'' + '\n');
+            }
+            return writr.toString();
+        };
+    </script>
+</head>
+
+<body>
+    <form>
+        <label for="area1">Addon 1</label>
+        <textarea id="area1" placeholder="Paste addon data for sheet 1 here."></textarea>
+        <label for="area2">Addon 2</label>
+        <textarea id="area2" placeholder="Paste addon data for sheet 2 here."></textarea>
+        <label for="area3">Combined</label>
+        <textarea id="area3" readonly placeholder="Output will be here."></textarea>
+        <button text="Combine" onclick="combine" />
+    </form>
+</body>
+
+</html>

@@ -83,18 +83,50 @@
             return writr.toString();
         };
     </script>
+    <style>
+        div {
+            float: left;
+            margin: 1%;
+        }
+
+        label {
+            display: block;
+        }
+
+        textarea {
+            width: 95%;
+            height: 15em;
+        }
+
+        #input {
+            width: 50%;
+        }
+
+        #combine {
+            margin-top: 15em;
+        }
+
+        #output {
+            margin-top: 8.5em;
+            width: 33%;
+        }
+    </style>
 </head>
 
 <body>
-    <form>
+    <div id="input">
         <label for="area1">Addon 1</label>
-        <textarea id="area1" placeholder="Paste addon data for sheet 1 here."></textarea>
+        <textarea id="area1" placeholder="Paste addon data for sheet 1 here."></textarea><br />
         <label for="area2">Addon 2</label>
         <textarea id="area2" placeholder="Paste addon data for sheet 2 here."></textarea>
+    </div>
+    <div id="combine">
+        <button onclick="combine">Combine</button>
+    </div>
+    <div id="output">
         <label for="area3">Combined</label>
         <textarea id="area3" readonly placeholder="Output will be here."></textarea>
-        <button text="Combine" onclick="combine" />
-    </form>
+    </div>
 </body>
 
 </html>

@@ -3,27 +3,25 @@
 <head>
     <script type="text/javascript">
         class ItemPriority {
+            entry;
+            priority;
             constructor(entry, priority) {
-                this.entry = null;
-                this.priority = 0;
-
-                this.entry = this.entry;
-                this.priority = this.priority;
-            }
-            getEntry() {
-                return this.entry;
-            }
-            getPriority() {
-                return this.priority;
+                this.entry = entry;
+                this.priority = priority;
             }
         }
 
 
         function combine() {
-            let dataMap = new HashMap();
-            this.readAndParse(document.getElementById("area1").value, dataMap);
-            this.readAndParse(document.getElementById("area2").value, dataMap);
-            document.getElementById("area3").value = this.writeOutput(dataMap);
+            try {
+                let dataMap = new Map();
+                this.readAndParse(document.getElementById("area1").value.split("\n"), dataMap);
+                this.readAndParse(document.getElementById("area2").value.split("\n"), dataMap);
+                let output = this.writeOutput(dataMap);
+                document.getElementById("area3").value = output;
+            } catch (e) {
+                alert(e);
+            }
         };
 
         function readAndParse(text, dataMap) {
@@ -31,32 +29,41 @@
             let newPriorities = null;
             for (let i = 0; i < text.length; i++) {
                 let line = text[i];
-                if (line.endsWith('^DFTFC Priority:')) {
-                    itemId = undefined[0].replace('\'', '');
-                    newPriorities = new ArrayList();
-                } else {
-                    if (line.contains('|') && line.contains('|r:')) {
-                        if (itemId === null) {
-                            throw new Exception('Found item priority before finding start of item.');
-                        }
-                        let split = line.split('r: ');
-                        let entry = split[0].replace('|', '').trim();
-                        let priority = Float.parseFloat(split[1].replace(';\'', '').trim());
-                        newPriorities.add(new ItemPriority(entry, priority));
-                    }
+                if (line === "") {
+                    // skip empty lines.
+                    continue;
                 }
-                if (line.endsWith(';\'')) {
+                if (line.endsWith('^DFTFC Priority:')) {
+                    itemId = line.split("^")[0].replaceAll("\"", "").trim();
+                    newPriorities = [];
+                } else if (line.includes("Free Roll;")) {
+                    // Skip free roll items;
+                    itemId = null;
+                    newPriorities = null;
+                    continue;
+                } else if (line.includes('|') && line.includes('|r:')) {
                     if (itemId === null) {
-                        throw new Exception('Found end of item before finding start of item.');
+                        throw new Error('Found item priority before finding start of item.');
+                    }
+                    let split = line.split('r: ');
+                    let entry = split[0].replaceAll('|', '').trim();
+                    let priority = parseFloat(split[1].replaceAll(';\'', '').trim());
+                    newPriorities.push(new ItemPriority(entry, priority));
+
+                }
+
+                if (line.endsWith(";\"")) {
+                    if (itemId === null) {
+                        throw new Error('Found end of item before finding start of item.');
                     }
                     if (newPriorities === null) {
-                        throw new Exception('Found end of item before finding any priority entries.');
+                        throw new Error('Found end of item before finding any priority entries.');
                     }
                     let existingPriorities = dataMap.get(itemId);
-                    if (existingPriorities !== null) {
-                        existingPriorities.addAll(newPriorities);
+                    if (existingPriorities) {
+                        existingPriorities.push(...newPriorities);
                     } else {
-                        dataMap.put(itemId, newPriorities);
+                        dataMap.set(itemId, newPriorities);
                     }
                     itemId = null;
                     newPriorities = null;
@@ -65,22 +72,17 @@
         };
 
         function writeOutput(dataMap) {
-            let writer = new StringWriter();
-            for (const entry of dataMap.entrySet()) {
-                let itemId = entry.getKey();
-                let values = entry.getValue();
-                values.sort(new Comparator());
-                writer.append('\'').append(itemId).append('^DFTFC Priority:');
+            let sortedMap = [...dataMap.entries()].sort();
+            let output = "";
+            for (const [itemId, values] of sortedMap) {
+                values.sort((a,b) => b.priority - a.priority);
+                output = output.concat("\"", itemId, '^DFTFC Priority:');
                 for (const value of values) {
-                    writer.append('\n');
-                    writer.append('|');
-                    writer.append(value.entry);
-                    writer.append('|r: ');
-                    writer.append(String.valueOf(value.priority));
+                    output = output.concat("\n|", value.entry, "|r: ", value.priority);
                 }
-                writer.append(';\'' + '\n');
+                output = output.concat(";\"\n");
             }
-            return writr.toString();
+            return output;
         };
     </script>
     <style>
@@ -116,12 +118,13 @@
 <body>
     <div id="input">
         <label for="area1">Addon 1</label>
-        <textarea id="area1" placeholder="Paste addon data for sheet 1 here."></textarea><br />
+        <textarea id="area1" placeholder="Paste addon data for sheet 1 here."></textarea>
+        <br />
         <label for="area2">Addon 2</label>
         <textarea id="area2" placeholder="Paste addon data for sheet 2 here."></textarea>
     </div>
     <div id="combine">
-        <button onclick="combine">Combine</button>
+        <button onclick="combine()">Combine</button>
     </div>
     <div id="output">
         <label for="area3">Combined</label>
